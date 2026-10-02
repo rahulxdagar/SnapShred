@@ -270,8 +270,23 @@ struct DeckScreen: View {
         ToolbarItem(placement: .topBarLeading) {
             Menu {
                 Picker("Show", selection: $session.filter) {
-                    ForEach(LibraryFilter.allCases) { filter in
+                    ForEach(LibraryFilter.smartDecks) { filter in
                         Label(filter.title, systemImage: filter.systemImage).tag(filter)
+                    }
+                }
+                if !session.albums.isEmpty {
+                    Menu("Albums", systemImage: "rectangle.stack") {
+                        Picker("Albums", selection: $session.filter) {
+                            ForEach(session.albums) { album in
+                                Label {
+                                    Text(album.title)
+                                    Text("\(album.count.formatted()) items")
+                                } icon: {
+                                    Image(systemName: "rectangle.stack")
+                                }
+                                .tag(LibraryFilter.album(album))
+                            }
+                        }
                     }
                 }
                 Picker("Order", selection: $session.sortOrder) {
