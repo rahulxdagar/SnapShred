@@ -23,7 +23,7 @@ struct CompletionView: View {
                 .glassEffect(.regular.tint(.accentColor.opacity(0.35)), in: .circle)
 
             VStack(spacing: 8) {
-                Text(isEmptyFilter ? "No \(session.filter.title)" : "All Caught Up")
+                Text(isEmptyFilter ? session.filter.emptyTitle : "All Caught Up")
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 Text(message)
                     .font(.body)
@@ -77,7 +77,7 @@ struct CompletionView: View {
 
     private var message: String {
         if isEmptyFilter {
-            return "Nothing here to sort through right now."
+            return session.filter.emptyMessage
         }
         return session.bin.isEmpty
             ? "You've reviewed every item in \(session.filter.title)."

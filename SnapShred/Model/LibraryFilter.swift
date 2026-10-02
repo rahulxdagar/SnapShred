@@ -41,6 +41,21 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         }
     }
 
+    var emptyTitle: String {
+        switch self {
+        case .onThisDay: "No Memories Today"
+        default: "No \(title)"
+        }
+    }
+
+    var emptyMessage: String {
+        switch self {
+        case .onThisDay: "Nothing was captured on this date in past years. Check back tomorrow."
+        case .oldScreenshots: "Every screenshot you have is less than a month old."
+        default: "Nothing here to sort through right now."
+        }
+    }
+
     func fetchAssets(order: SortOrder) -> PHFetchResult<PHAsset> {
         let options = PHFetchOptions()
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: order == .oldestFirst)]
