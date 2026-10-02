@@ -19,6 +19,10 @@ struct DeckScreen: View {
     @State private var showBin = false
     @State private var confirmReset = false
     @State private var cardSize: CGSize = .zero
+    @State private var viewerAsset: PHAsset?
+    @State private var showViewer = false
+    @State private var viewerDecision: SwipeDirection?
+    @Namespace private var cardNamespace
 
     private let threshold: CGFloat = 110
 
@@ -37,6 +41,12 @@ struct DeckScreen: View {
             }
             .sheet(isPresented: $showBin) {
                 ReviewBinView()
+            }
+            .fullScreenCover(isPresented: $showViewer, onDismiss: applyViewerDecision) {
+                if let asset = viewerAsset {
+                    PhotoViewer(asset: asset) { viewerDecision = $0 }
+                        .navigationTransition(.zoom(sourceID: asset.localIdentifier, in: cardNamespace))
+                }
             }
             .confirmationDialog("Start over?", isPresented: $confirmReset, titleVisibility: .visible) {
                 Button("Reset Progress", role: .destructive) { session.resetProgress() }
@@ -114,6 +124,8 @@ struct DeckScreen: View {
                 let depth = max(0, CGFloat(index) - (pull?.progress ?? 0))
 
                 PhotoCard(asset: asset, pull: isTop ? pull : nil)
+                    .matchedTransitionSource(id: asset.localIdentifier, in: cardNamespace)
+                    .onTapGesture { openViewer(for: asset) }
                     .scaleEffect(1 - depth * 0.06)
                     .offset(y: depth * 22)
                     .brightness(-Double(depth) * 0.08)
@@ -124,7 +136,8 @@ struct DeckScreen: View {
                     .accessibilityHidden(!isTop)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(accessibilityLabel(for: asset))
-                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite.")
+                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite. Tap to view full screen.")
+                    .accessibilityAction(named: "View Full Screen") { openViewer(for: asset) }
                     .accessibilityAction(named: "Shred") { commit(.left) }
                     .accessibilityAction(named: "Keep") { commit(.right) }
                     .accessibilityAction(named: "Favorite") { commit(.up) }
@@ -138,6 +151,21 @@ struct DeckScreen: View {
         let kind = asset.mediaType == .video ? "Video" : "Photo"
         guard let date = asset.creationDate else { return kind }
         return "\(kind) from \(date.formatted(date: .long, time: .omitted))"
+    }
+
+    // MARK: Viewer
+
+    private func openViewer(for asset: PHAsset) {
+        guard !isFlying else { return }
+        viewerAsset = asset
+        showViewer = true
+    }
+
+    /// Runs after the viewer has fully closed so the card flies off in view.
+    private func applyViewerDecision() {
+        guard let direction = viewerDecision else { return }
+        viewerDecision = nil
+        commit(direction)
     }
 
     // MARK: Gesture
