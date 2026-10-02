@@ -17,7 +17,7 @@ Built with SwiftUI and the iOS 27 **Liquid Glass** design language.
 - **One-tap cleanup** — delete the whole bin at once, with an estimate of the storage you'll free. Deleted items go to *Recently Deleted* for 30 days.
 - **Undo** — brings the last card back from the side it left.
 - **Picks up where you left off** — decisions are saved, so reviewed photos never come back.
-- **Focused decks** — filter by All Photos, Screenshots, Selfies, Live Photos or Videos, sorted newest or oldest first.
+- **Focused decks** — All Photos, On This Day, Screenshots, Old Screenshots (30+ days), Selfies, Live Photos, Videos, or any of your own albums, sorted newest or oldest first.
 - **Lifetime stats** — total items shredded and space freed.
 - **Liquid Glass everywhere** — interactive glass controls that react as you drag, glass metadata pills and verdict stamps, and an ambient backdrop of the current photo that washes red or green with your swipe.
 - **Haptics and accessibility** — haptic feedback on every decision, plus VoiceOver actions to keep, shred or favorite.
@@ -63,8 +63,7 @@ SnapShred works entirely on device. Your photos never leave your phone, and noth
 ## Roadmap
 
 - Duplicate and similar-photo detection
-- Smart decks: blurry shots, old screenshots, largest files first
-- "On This Day" deck
+- Smart decks: blurry shots, largest files first
 - Video and Live Photo playback on cards
 - Pinch-to-zoom preview
 - Daily goals, streaks and a Home Screen widget

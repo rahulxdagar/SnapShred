@@ -274,6 +274,21 @@ struct DeckScreen: View {
                         Label(filter.title, systemImage: filter.systemImage).tag(filter)
                     }
                 }
+                if !session.albums.isEmpty {
+                    Menu("Albums", systemImage: "rectangle.stack") {
+                        Picker("Albums", selection: $session.filter) {
+                            ForEach(session.albums) { album in
+                                Label {
+                                    Text(album.title)
+                                    Text("\(album.count.formatted()) items")
+                                } icon: {
+                                    Image(systemName: "rectangle.stack")
+                                }
+                                .tag(LibraryFilter.album(album))
+                            }
+                        }
+                    }
+                }
                 Picker("Order", selection: $session.sortOrder) {
                     ForEach(SortOrder.allCases) { order in
                         Text(order.title).tag(order)

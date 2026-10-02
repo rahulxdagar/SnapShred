@@ -27,6 +27,8 @@ final class SwipeSession {
     private(set) var deck: [PHAsset] = []
     /// Photos marked for deletion, in swipe order.
     private(set) var bin: [PHAsset] = []
+    /// The user's albums, offered as decks in the filter menu.
+    private(set) var albums: [Album] = []
     private(set) var remaining = 0
     private(set) var totalInFilter = 0
     private(set) var isLoaded = false
@@ -69,6 +71,7 @@ final class SwipeSession {
         totalInFilter = result.count
         remaining = undecided
 
+        albums = Album.userAlbums()
         loadBin()
         refillDeck()
         isLoaded = true
@@ -186,6 +189,7 @@ final class SwipeSession {
         history.removeAll { deleted.contains($0.asset.localIdentifier) }
         lifetimeShredded += ids.count
         lifetimeBytesFreed += Int(estimatedBytes)
+        albums = Album.userAlbums()
         return ids.count
     }
 
