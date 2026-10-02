@@ -136,11 +136,12 @@ struct DeckScreen: View {
                     .accessibilityHidden(!isTop)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(accessibilityLabel(for: asset))
-                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite. Tap to view full screen.")
+                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite, down to decide later. Tap to view full screen.")
                     .accessibilityAction(named: "View Full Screen") { openViewer(for: asset) }
                     .accessibilityAction(named: "Shred") { commit(.left) }
                     .accessibilityAction(named: "Keep") { commit(.right) }
                     .accessibilityAction(named: "Favorite") { commit(.up) }
+                    .accessibilityAction(named: "Decide Later") { commit(.down) }
                     .zIndex(Double(-index))
             }
         }
@@ -173,9 +174,9 @@ struct DeckScreen: View {
     /// The direction and strength (0...1) the top card is currently being pulled.
     private var pull: (direction: SwipeDirection, progress: CGFloat)? {
         let horizontal = abs(drag.width)
-        let vertical = -drag.height
+        let vertical = abs(drag.height)
         if vertical > horizontal, vertical > 8 {
-            return (.up, min(1, vertical / threshold))
+            return (drag.height < 0 ? .up : .down, min(1, vertical / threshold))
         }
         guard horizontal > 8 else { return nil }
         return (drag.width < 0 ? .left : .right, min(1, horizontal / threshold))
@@ -198,6 +199,8 @@ struct DeckScreen: View {
                     commit(.right)
                 } else if -t.height > threshold || -predicted.height > threshold * 2.5 {
                     commit(.up)
+                } else if t.height > threshold || predicted.height > threshold * 2.5 {
+                    commit(.down)
                 } else {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.68)) { drag = .zero }
                 }
@@ -266,8 +269,9 @@ struct DeckScreen: View {
             pull?.direction == direction ? pull?.progress ?? 0 : 0
         }
 
-        return GlassEffectContainer(spacing: 24) {
-            HStack(spacing: 18) {
+        // Container spacing stays below the button gap so the glass doesn't melt together.
+        return GlassEffectContainer(spacing: 6) {
+            HStack(spacing: 12) {
                 GlassActionButton(title: "Undo", systemImage: "arrow.uturn.backward", diameter: 52) {
                     undo()
                 }
@@ -283,6 +287,10 @@ struct DeckScreen: View {
 
                 GlassActionButton(title: "Keep", systemImage: "heart.fill", tint: .keep, diameter: 76, emphasis: emphasis(.right)) {
                     commit(.right)
+                }
+
+                GlassActionButton(title: "Decide Later", systemImage: "clock.arrow.circlepath", diameter: 48, emphasis: emphasis(.down)) {
+                    commit(.down)
                 }
             }
         }

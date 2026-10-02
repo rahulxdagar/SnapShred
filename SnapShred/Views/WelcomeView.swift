@@ -73,6 +73,7 @@ struct WelcomeView: View {
             rule("arrow.left", tint: .shred, "Swipe left to mark for shredding")
             rule("arrow.right", tint: .keep, "Swipe right to keep")
             rule("arrow.up", tint: .favorite, "Swipe up to keep and favorite")
+            rule("arrow.down", tint: .later, "Swipe down to decide later")
             rule("lock.shield", tint: .white, "Nothing is deleted until you confirm")
         }
         .padding(20)

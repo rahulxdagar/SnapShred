@@ -12,7 +12,7 @@ Built with SwiftUI and the iOS 27 **Liquid Glass** design language.
 
 ## Features
 
-- **Swipe to decide** — left to shred, right to keep, up to keep *and* favorite. Cards tilt, fly and spring back with physical, velocity-aware motion.
+- **Swipe to decide** — left to shred, right to keep, up to keep *and* favorite, down to decide later. Cards tilt, fly and spring back with physical, velocity-aware motion.
 - **Nothing is deleted until you confirm** — swiped-left photos wait in the **Shred Bin**. Tap any photo to rescue it, or long-press to preview.
 - **One-tap cleanup** — delete the whole bin at once, with an estimate of the storage you'll free. Deleted items go to *Recently Deleted* for 30 days.
 - **Undo** — brings the last card back from the side it left.
