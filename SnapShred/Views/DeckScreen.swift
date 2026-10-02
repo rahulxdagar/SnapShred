@@ -211,6 +211,7 @@ struct DeckScreen: View {
         case .left: return CGSize(width: -width, height: drag.height + 40)
         case .right: return CGSize(width: width, height: drag.height + 40)
         case .up: return CGSize(width: drag.width, height: -height)
+        case .down: return CGSize(width: drag.width, height: height)
         }
     }
 

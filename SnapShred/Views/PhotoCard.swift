@@ -89,6 +89,7 @@ struct PhotoCard: View {
             case .left: ("SHRED", "trash.fill", .topTrailing, 14)
             case .right: ("KEEP", "checkmark", .topLeading, -14)
             case .up: ("FAVORITE", "star.fill", .center, 0)
+            case .down: ("LATER", "clock.fill", .top, 0)
             }
 
             Label(title, systemImage: symbol)
