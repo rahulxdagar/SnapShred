@@ -19,6 +19,10 @@ struct DeckScreen: View {
     @State private var showBin = false
     @State private var confirmReset = false
     @State private var cardSize: CGSize = .zero
+    @State private var viewerAsset: PHAsset?
+    @State private var showViewer = false
+    @State private var viewerDecision: SwipeDirection?
+    @Namespace private var cardNamespace
 
     private let threshold: CGFloat = 110
 
@@ -37,6 +41,12 @@ struct DeckScreen: View {
             }
             .sheet(isPresented: $showBin) {
                 ReviewBinView()
+            }
+            .fullScreenCover(isPresented: $showViewer, onDismiss: applyViewerDecision) {
+                if let asset = viewerAsset {
+                    PhotoViewer(asset: asset) { viewerDecision = $0 }
+                        .navigationTransition(.zoom(sourceID: asset.localIdentifier, in: cardNamespace))
+                }
             }
             .confirmationDialog("Start over?", isPresented: $confirmReset, titleVisibility: .visible) {
                 Button("Reset Progress", role: .destructive) { session.resetProgress() }
@@ -113,7 +123,9 @@ struct DeckScreen: View {
                 let isTop = index == 0
                 let depth = max(0, CGFloat(index) - (pull?.progress ?? 0))
 
-                PhotoCard(asset: asset, pull: isTop ? pull : nil)
+                PhotoCard(asset: asset, pull: isTop ? pull : nil, isActive: isTop)
+                    .matchedTransitionSource(id: asset.localIdentifier, in: cardNamespace)
+                    .onTapGesture { openViewer(for: asset) }
                     .scaleEffect(1 - depth * 0.06)
                     .offset(y: depth * 22)
                     .brightness(-Double(depth) * 0.08)
@@ -124,10 +136,12 @@ struct DeckScreen: View {
                     .accessibilityHidden(!isTop)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(accessibilityLabel(for: asset))
-                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite.")
+                    .accessibilityHint("Swipe left to shred, right to keep, up to favorite, down to decide later. Tap to view full screen.")
+                    .accessibilityAction(named: "View Full Screen") { openViewer(for: asset) }
                     .accessibilityAction(named: "Shred") { commit(.left) }
                     .accessibilityAction(named: "Keep") { commit(.right) }
                     .accessibilityAction(named: "Favorite") { commit(.up) }
+                    .accessibilityAction(named: "Decide Later") { commit(.down) }
                     .zIndex(Double(-index))
             }
         }
@@ -140,14 +154,29 @@ struct DeckScreen: View {
         return "\(kind) from \(date.formatted(date: .long, time: .omitted))"
     }
 
+    // MARK: Viewer
+
+    private func openViewer(for asset: PHAsset) {
+        guard !isFlying else { return }
+        viewerAsset = asset
+        showViewer = true
+    }
+
+    /// Runs after the viewer has fully closed so the card flies off in view.
+    private func applyViewerDecision() {
+        guard let direction = viewerDecision else { return }
+        viewerDecision = nil
+        commit(direction)
+    }
+
     // MARK: Gesture
 
     /// The direction and strength (0...1) the top card is currently being pulled.
     private var pull: (direction: SwipeDirection, progress: CGFloat)? {
         let horizontal = abs(drag.width)
-        let vertical = -drag.height
+        let vertical = abs(drag.height)
         if vertical > horizontal, vertical > 8 {
-            return (.up, min(1, vertical / threshold))
+            return (drag.height < 0 ? .up : .down, min(1, vertical / threshold))
         }
         guard horizontal > 8 else { return nil }
         return (drag.width < 0 ? .left : .right, min(1, horizontal / threshold))
@@ -170,6 +199,8 @@ struct DeckScreen: View {
                     commit(.right)
                 } else if -t.height > threshold || -predicted.height > threshold * 2.5 {
                     commit(.up)
+                } else if t.height > threshold || predicted.height > threshold * 2.5 {
+                    commit(.down)
                 } else {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.68)) { drag = .zero }
                 }
@@ -183,6 +214,7 @@ struct DeckScreen: View {
         case .left: return CGSize(width: -width, height: drag.height + 40)
         case .right: return CGSize(width: width, height: drag.height + 40)
         case .up: return CGSize(width: drag.width, height: -height)
+        case .down: return CGSize(width: drag.width, height: height)
         }
     }
 
@@ -237,8 +269,9 @@ struct DeckScreen: View {
             pull?.direction == direction ? pull?.progress ?? 0 : 0
         }
 
-        return GlassEffectContainer(spacing: 24) {
-            HStack(spacing: 18) {
+        // Container spacing stays below the button gap so the glass doesn't melt together.
+        return GlassEffectContainer(spacing: 6) {
+            HStack(spacing: 12) {
                 GlassActionButton(title: "Undo", systemImage: "arrow.uturn.backward", diameter: 52) {
                     undo()
                 }
@@ -254,6 +287,10 @@ struct DeckScreen: View {
 
                 GlassActionButton(title: "Keep", systemImage: "heart.fill", tint: .keep, diameter: 76, emphasis: emphasis(.right)) {
                     commit(.right)
+                }
+
+                GlassActionButton(title: "Decide Later", systemImage: "clock.arrow.circlepath", diameter: 48, emphasis: emphasis(.down)) {
+                    commit(.down)
                 }
             }
         }

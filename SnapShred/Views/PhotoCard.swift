@@ -11,11 +11,14 @@ struct PhotoCard: View {
     let asset: PHAsset
     /// Direction the card is being dragged towards, with 0...1 strength.
     var pull: (direction: SwipeDirection, progress: CGFloat)?
+    /// Only the top card plays motion, so cards underneath stay cheap.
+    var isActive = false
 
     static let cornerRadius: CGFloat = 36
 
     var body: some View {
         AssetImage(asset: asset, style: .fitOverBlur)
+            .overlay { motion }
             .overlay(alignment: .bottom) { details.padding(14) }
             .overlay { stamp }
             .clipShape(.rect(cornerRadius: Self.cornerRadius, style: .continuous))
@@ -29,6 +32,19 @@ struct PhotoCard: View {
     private var borderColor: Color {
         guard let pull else { return .white.opacity(0.18) }
         return pull.direction.tint.opacity(0.18 + 0.8 * pull.progress)
+    }
+
+    // MARK: Motion
+
+    @ViewBuilder
+    private var motion: some View {
+        if isActive {
+            if asset.mediaType == .video {
+                CardVideoPlayer(asset: asset)
+            } else if asset.mediaSubtypes.contains(.photoLive) {
+                CardLivePhoto(asset: asset)
+            }
+        }
     }
 
     // MARK: Metadata
@@ -89,6 +105,7 @@ struct PhotoCard: View {
             case .left: ("SHRED", "trash.fill", .topTrailing, 14)
             case .right: ("KEEP", "checkmark", .topLeading, -14)
             case .up: ("FAVORITE", "star.fill", .center, 0)
+            case .down: ("LATER", "clock.fill", .top, 0)
             }
 
             Label(title, systemImage: symbol)

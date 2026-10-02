@@ -13,6 +13,8 @@ struct AssetImage: View {
         case fill
         /// Shows the whole photo, letterboxed over a blurred copy of itself.
         case fitOverBlur
+        /// Shows the whole photo on a transparent background.
+        case fit
     }
 
     let asset: PHAsset
@@ -26,7 +28,9 @@ struct AssetImage: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Rectangle().fill(.quaternary)
+                if style != .fit {
+                    Rectangle().fill(.quaternary)
+                }
 
                 if let image {
                     switch style {
@@ -36,6 +40,11 @@ struct AssetImage: View {
                         filled(image)
                             .blur(radius: 40, opaque: true)
                             .overlay(.black.opacity(0.25))
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    case .fit:
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()

@@ -46,6 +46,8 @@ final class SwipeSession {
     private var history: [HistoryEntry] = []
     private var fetchResult: PHFetchResult<PHAsset>?
     private var cursor = 0
+    /// Cards swiped down this session; they come back once the library is exhausted.
+    private var deferred: [PHAsset] = []
     private let store = DecisionStore()
     private let photos = PhotoService.shared
 
@@ -62,6 +64,7 @@ final class SwipeSession {
         fetchResult = result
         cursor = 0
         deck = []
+        deferred = []
         history = []
 
         var undecided = 0
@@ -100,6 +103,9 @@ final class SwipeSession {
                 deck.append(asset)
             }
         }
+        while deck.count < Self.deckBufferSize, !deferred.isEmpty {
+            deck.append(deferred.removeFirst())
+        }
         photos.startCaching(Array(deck.prefix(4)), targetSize: Self.cacheSize)
     }
 
@@ -110,9 +116,13 @@ final class SwipeSession {
         let asset = deck.removeFirst()
         let id = asset.localIdentifier
 
-        store.record(direction.decision, for: id)
+        if let decision = direction.decision {
+            store.record(decision, for: id)
+            remaining = max(0, remaining - 1)
+        } else {
+            deferred.append(asset)
+        }
         history.append(HistoryEntry(asset: asset, direction: direction, wasFavorite: asset.isFavorite))
-        remaining = max(0, remaining - 1)
 
         switch direction {
         case .left:
@@ -125,6 +135,8 @@ final class SwipeSession {
             if !asset.isFavorite {
                 Task { try? await photos.setFavorite(true, identifier: id) }
             }
+        case .down:
+            break
         }
         refillDeck()
     }
@@ -135,8 +147,10 @@ final class SwipeSession {
         guard let entry = history.popLast() else { return nil }
         let id = entry.asset.localIdentifier
 
-        store.clear(id)
-        remaining += 1
+        if entry.direction.decision != nil {
+            store.clear(id)
+            remaining += 1
+        }
 
         switch entry.direction {
         case .left:
@@ -149,6 +163,10 @@ final class SwipeSession {
             if !entry.wasFavorite {
                 Task { try? await photos.setFavorite(false, identifier: id) }
             }
+        case .down:
+            // It may already have cycled back into the deck.
+            deferred.removeAll { $0.localIdentifier == id }
+            deck.removeAll { $0.localIdentifier == id }
         }
         deck.insert(entry.asset, at: 0)
         return entry.direction

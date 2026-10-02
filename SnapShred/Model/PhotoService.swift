@@ -3,6 +3,7 @@
 //  SnapShred
 //
 
+import AVFoundation
 import Photos
 import UIKit
 
@@ -42,6 +43,33 @@ nonisolated final class PhotoService: @unchecked Sendable {
 
             continuation.onTermination = { [imageManager] _ in
                 imageManager.cancelImageRequest(requestID)
+            }
+        }
+    }
+
+    /// A player item for a video asset, downloading from iCloud if needed.
+    func playerItem(for asset: PHAsset) async -> AVPlayerItem? {
+        await withCheckedContinuation { continuation in
+            let options = PHVideoRequestOptions()
+            options.isNetworkAccessAllowed = true
+            options.deliveryMode = .automatic
+            imageManager.requestPlayerItem(forVideo: asset, options: options) { item, _ in
+                continuation.resume(returning: item)
+            }
+        }
+    }
+
+    /// The full-quality Live Photo for an asset, or `nil` if it isn't one.
+    func livePhoto(for asset: PHAsset, targetSize: CGSize) async -> PHLivePhoto? {
+        await withCheckedContinuation { continuation in
+            let options = PHLivePhotoRequestOptions()
+            // High quality delivers exactly once, so the continuation resumes once.
+            options.deliveryMode = .highQualityFormat
+            options.isNetworkAccessAllowed = true
+            imageManager.requestLivePhoto(
+                for: asset, targetSize: targetSize, contentMode: .aspectFit, options: options
+            ) { livePhoto, _ in
+                continuation.resume(returning: livePhoto)
             }
         }
     }
