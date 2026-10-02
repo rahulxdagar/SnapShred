@@ -123,7 +123,7 @@ struct DeckScreen: View {
                 let isTop = index == 0
                 let depth = max(0, CGFloat(index) - (pull?.progress ?? 0))
 
-                PhotoCard(asset: asset, pull: isTop ? pull : nil)
+                PhotoCard(asset: asset, pull: isTop ? pull : nil, isActive: isTop)
                     .matchedTransitionSource(id: asset.localIdentifier, in: cardNamespace)
                     .onTapGesture { openViewer(for: asset) }
                     .scaleEffect(1 - depth * 0.06)

@@ -3,6 +3,7 @@
 //  SnapShred
 //
 
+import AVFoundation
 import Photos
 import UIKit
 
@@ -42,6 +43,18 @@ nonisolated final class PhotoService: @unchecked Sendable {
 
             continuation.onTermination = { [imageManager] _ in
                 imageManager.cancelImageRequest(requestID)
+            }
+        }
+    }
+
+    /// A player item for a video asset, downloading from iCloud if needed.
+    func playerItem(for asset: PHAsset) async -> AVPlayerItem? {
+        await withCheckedContinuation { continuation in
+            let options = PHVideoRequestOptions()
+            options.isNetworkAccessAllowed = true
+            options.deliveryMode = .automatic
+            imageManager.requestPlayerItem(forVideo: asset, options: options) { item, _ in
+                continuation.resume(returning: item)
             }
         }
     }
