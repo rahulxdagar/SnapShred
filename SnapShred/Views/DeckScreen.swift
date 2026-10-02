@@ -270,7 +270,7 @@ struct DeckScreen: View {
         ToolbarItem(placement: .topBarLeading) {
             Menu {
                 Picker("Show", selection: $session.filter) {
-                    ForEach(LibraryFilter.allCases) { filter in
+                    ForEach(LibraryFilter.smartDecks) { filter in
                         Label(filter.title, systemImage: filter.systemImage).tag(filter)
                     }
                 }

@@ -5,8 +5,33 @@
 
 import Photos
 
+/// A user-created album that can be used as a deck.
+struct Album: Hashable, Identifiable {
+    let id: String
+    let title: String
+    let count: Int
+
+    // Identity is the album alone, so a changed count doesn't break menu selection.
+    static func == (lhs: Album, rhs: Album) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
+    /// The user's own albums that contain at least one item, sorted by name.
+    ///
+    /// Shared and synced albums are left out: their items can't be deleted from the device.
+    static func userAlbums() -> [Album] {
+        let collections = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
+        var albums: [Album] = []
+        collections.enumerateObjects { collection, _, _ in
+            let count = PHAsset.fetchAssets(in: collection, options: nil).count
+            guard count > 0 else { return }
+            albums.append(Album(id: collection.localIdentifier, title: collection.localizedTitle ?? "Untitled Album", count: count))
+        }
+        return albums.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+}
+
 /// Which slice of the library the deck is built from.
-enum LibraryFilter: String, CaseIterable, Identifiable {
+enum LibraryFilter: Hashable, Identifiable {
     case photos
     case onThisDay
     case screenshots
@@ -14,6 +39,12 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
     case selfies
     case livePhotos
     case videos
+    case album(Album)
+
+    /// The built-in decks offered alongside the user's albums.
+    static let smartDecks: [LibraryFilter] = [
+        .photos, .onThisDay, .screenshots, .oldScreenshots, .selfies, .livePhotos, .videos,
+    ]
 
     var id: Self { self }
 
@@ -26,6 +57,7 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         case .selfies: "Selfies"
         case .livePhotos: "Live Photos"
         case .videos: "Videos"
+        case .album(let album): album.title
         }
     }
 
@@ -38,12 +70,14 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         case .selfies: "person.crop.square"
         case .livePhotos: "livephoto"
         case .videos: "video"
+        case .album: "rectangle.stack"
         }
     }
 
     var emptyTitle: String {
         switch self {
         case .onThisDay: "No Memories Today"
+        case .album: "Album Is Empty"
         default: "No \(title)"
         }
     }
@@ -89,6 +123,12 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
             )
             if let selfies = albums.firstObject {
                 return PHAsset.fetchAssets(in: selfies, options: options)
+            }
+            options.predicate = NSPredicate(value: false)
+        case .album(let album):
+            let collections = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [album.id], options: nil)
+            if let collection = collections.firstObject {
+                return PHAsset.fetchAssets(in: collection, options: options)
             }
             options.predicate = NSPredicate(value: false)
         }
