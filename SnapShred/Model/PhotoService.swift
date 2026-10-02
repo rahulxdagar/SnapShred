@@ -59,6 +59,21 @@ nonisolated final class PhotoService: @unchecked Sendable {
         }
     }
 
+    /// The full-quality Live Photo for an asset, or `nil` if it isn't one.
+    func livePhoto(for asset: PHAsset, targetSize: CGSize) async -> PHLivePhoto? {
+        await withCheckedContinuation { continuation in
+            let options = PHLivePhotoRequestOptions()
+            // High quality delivers exactly once, so the continuation resumes once.
+            options.deliveryMode = .highQualityFormat
+            options.isNetworkAccessAllowed = true
+            imageManager.requestLivePhoto(
+                for: asset, targetSize: targetSize, contentMode: .aspectFit, options: options
+            ) { livePhoto, _ in
+                continuation.resume(returning: livePhoto)
+            }
+        }
+    }
+
     func startCaching(_ assets: [PHAsset], targetSize: CGSize) {
         guard !assets.isEmpty else { return }
         imageManager.startCachingImages(for: assets, targetSize: targetSize, contentMode: .aspectFit, options: nil)

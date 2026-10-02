@@ -38,8 +38,12 @@ struct PhotoCard: View {
 
     @ViewBuilder
     private var motion: some View {
-        if isActive, asset.mediaType == .video {
-            CardVideoPlayer(asset: asset)
+        if isActive {
+            if asset.mediaType == .video {
+                CardVideoPlayer(asset: asset)
+            } else if asset.mediaSubtypes.contains(.photoLive) {
+                CardLivePhoto(asset: asset)
+            }
         }
     }
 
