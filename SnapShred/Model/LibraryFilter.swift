@@ -9,6 +9,7 @@ import Photos
 enum LibraryFilter: String, CaseIterable, Identifiable {
     case photos
     case screenshots
+    case oldScreenshots
     case selfies
     case livePhotos
     case videos
@@ -19,6 +20,7 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         switch self {
         case .photos: "All Photos"
         case .screenshots: "Screenshots"
+        case .oldScreenshots: "Old Screenshots"
         case .selfies: "Selfies"
         case .livePhotos: "Live Photos"
         case .videos: "Videos"
@@ -29,6 +31,7 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         switch self {
         case .photos: "photo.on.rectangle.angled"
         case .screenshots: "camera.viewfinder"
+        case .oldScreenshots: "calendar.badge.clock"
         case .selfies: "person.crop.square"
         case .livePhotos: "livephoto"
         case .videos: "video"
@@ -48,6 +51,11 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
                 format: "mediaType == %d AND (mediaSubtypes & %d) != 0",
                 image, PHAssetMediaSubtype.photoScreenshot.rawValue
             )
+        case .oldScreenshots:
+            options.predicate = NSPredicate(
+                format: "mediaType == %d AND (mediaSubtypes & %d) != 0 AND creationDate < %@",
+                image, PHAssetMediaSubtype.photoScreenshot.rawValue, Self.oldScreenshotCutoff as NSDate
+            )
         case .livePhotos:
             options.predicate = NSPredicate(
                 format: "mediaType == %d AND (mediaSubtypes & %d) != 0",
@@ -65,6 +73,11 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
             options.predicate = NSPredicate(value: false)
         }
         return PHAsset.fetchAssets(with: options)
+    }
+
+    /// Screenshots older than this are rarely needed again.
+    private static var oldScreenshotCutoff: Date {
+        Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .now
     }
 }
 
